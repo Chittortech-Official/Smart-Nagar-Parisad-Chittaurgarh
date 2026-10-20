@@ -1,8 +1,6 @@
 import { useState } from 'react';
 import { NagarParishadLogo } from './NagarParishadLogo';
 import type { UserRole } from '../types';
-
-
 import { 
   Database, 
   MapPin, 
@@ -15,7 +13,11 @@ import {
   Mail, 
   ExternalLink,
   Lock,
-  ArrowRight
+  ArrowRight,
+  ClockAlert,
+  Inbox,
+  CheckCircle2,
+  Sparkles
 } from 'lucide-react';
 
 interface LoginViewProps {
@@ -23,147 +25,201 @@ interface LoginViewProps {
 }
 
 export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
-  const [email, setEmail] = useState('admin@chittortech.com');
+  const [email, setEmail] = useState('portalmanager@chittorgarh.gov.in');
   const [password, setPassword] = useState('••••••••••••');
   const [showPassword, setShowPassword] = useState(false);
-  const [selectedRole, setSelectedRole] = useState<UserRole>('SUPER_ADMIN');
-
-  const rolePresets: { role: UserRole; label: string; email: string }[] = [
-    { role: 'SUPER_ADMIN', label: 'Super Admin', email: 'admin@chittortech.com' },
-    { role: 'PORTAL_MANAGER', label: 'Portal Manager', email: 'portalmanager@chittorgarh.gov.in' },
-    { role: 'CALL_OPERATOR', label: 'Call Operator', email: 'calloperator@chittorgarh.gov.in' },
-    { role: 'CHAIRMAN', label: 'Hon. Chairman', email: 'chairman@chittorgarh.gov.in' },
-    { role: 'WARD_COUNCILLOR', label: 'Ward Councillor', email: 'councillor.w01@chittorgarh.gov.in' },
-    { role: 'DEPARTMENTAL_OFFICER', label: 'Dept Officer', email: 'officer.sanitation@chittorgarh.gov.in' }
-  ];
-
-  const handleRoleChange = (role: UserRole, roleEmail: string) => {
-    setSelectedRole(role);
-    setEmail(roleEmail);
-  };
+  const selectedRole: UserRole = 'PORTAL_MANAGER';
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onLogin(selectedRole, email);
   };
 
+  // Official portal functionalities listed under Nagar Parishad Admin
+  const portalFeatures = [
+    {
+      title: 'Live Chittorgarh Central Database Synchronization',
+      desc: 'Encrypted, confidential municipal database sync with zero third-party exposure.',
+      icon: <Database className="w-4 h-4 text-sky-400" />,
+      accent: 'border-sky-500/20 bg-sky-500/10 text-sky-300'
+    },
+    {
+      title: '60-Ward GIS Complaint & Councillor Routing',
+      desc: 'Automated locality mapping, landmark tagging, and direct councillor dispatch.',
+      icon: <MapPin className="w-4 h-4 text-emerald-400" />,
+      accent: 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300'
+    },
+    {
+      title: 'Automated Hindi WhatsApp Citizen Notifications',
+      desc: 'Instant 24/7 registration acknowledgements, tracking links, and progress updates.',
+      icon: <MessageSquare className="w-4 h-4 text-emerald-400" />,
+      accent: 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300'
+    },
+    {
+      title: 'Mandatory 2-Step Citizen-Certified Closure',
+      desc: 'Department officer sign-off followed by mandatory citizen telephonic satisfaction verification.',
+      icon: <ShieldCheck className="w-4 h-4 text-purple-400" />,
+      accent: 'border-purple-500/20 bg-purple-500/10 text-purple-300'
+    },
+    {
+      title: 'Real-Time SLA & Executive Escalation Monitoring',
+      desc: '12h, 24h, 48h, 72h departmental resolution countdowns with Hon. Chairman oversight.',
+      icon: <ClockAlert className="w-4 h-4 text-amber-400" />,
+      accent: 'border-amber-500/20 bg-amber-500/10 text-amber-300'
+    },
+    {
+      title: 'Helpline Intake Queue (10 AM - 6 PM) & Verification',
+      desc: 'Centralized review desk for incoming helpline calls, WhatsApp bot intakes, and after-hours queues.',
+      icon: <Inbox className="w-4 h-4 text-sky-400" />,
+      accent: 'border-sky-500/20 bg-sky-500/10 text-sky-300'
+    }
+  ];
+
   return (
     <div className="flex min-h-screen flex-col lg:flex-row bg-slate-900 font-sans">
-      {/* LEFT BRAND PANEL (Matches Reference Screenshot 1) */}
-      <div className="relative flex flex-col justify-between bg-[#080E1E] p-8 lg:p-14 lg:w-1/2 text-white overflow-hidden border-b lg:border-b-0 lg:border-r border-slate-800">
-        {/* Subtle grid background glow */}
-        <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+      
+      {/* ========================================================
+          LEFT BRAND PANEL: Official Government & ChittorTech Showcase
+          Color Palette: Deep Royal Navy (#0A1628), White, and Sky-Blue Glows
+         ======================================================== */}
+      <div className="relative flex flex-col justify-between bg-gradient-to-br from-[#071224] via-[#0C1D36] to-[#060F1E] p-8 lg:p-12 xl:p-14 lg:w-1/2 text-white overflow-hidden border-b lg:border-b-0 lg:border-r border-sky-950/60 shadow-2xl">
+        
+        {/* Sky-Blue and Navy Ambient Lighting / Subtle Gradients */}
+        <div className="absolute top-0 right-0 -mr-28 -mt-28 w-[420px] h-[420px] bg-sky-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-0 -ml-28 -mb-28 w-[420px] h-[420px] bg-blue-600/15 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-1/2 left-1/3 w-64 h-64 bg-sky-400/5 rounded-full blur-2xl pointer-events-none" />
 
-        {/* Top Badges */}
+        {/* Top Header Badges: Government Seal & ChittorTech Verification */}
         <div className="relative z-10 flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2.5 bg-slate-900/90 border border-slate-700/60 px-3.5 py-1.5 rounded-lg shadow-sm">
+          <div className="flex items-center gap-2.5 bg-slate-900/90 border border-sky-800/40 px-3.5 py-1.5 rounded-xl shadow-md backdrop-blur-md">
             <NagarParishadLogo size="sm" theme="dark" />
           </div>
-          <div className="bg-slate-900/90 border border-slate-700/60 px-3.5 py-2 rounded-lg text-xs font-semibold tracking-wider text-slate-300">
-            ChittorTech <span className="text-amber-400 font-normal">OFFICIAL DEVELOPER</span>
+          
+          <div className="flex items-center gap-1.5 bg-sky-950/70 border border-sky-600/40 px-3.5 py-2 rounded-xl text-xs font-semibold tracking-wider text-sky-200 shadow-md backdrop-blur-md">
+            <Sparkles className="w-3.5 h-3.5 text-sky-400" />
+            <span>ChittorTech</span>
+            <span className="text-amber-400 font-mono font-normal text-[11px] ml-1">OFFICIAL DEVELOPER</span>
           </div>
         </div>
 
-        {/* Main Content */}
-        <div className="relative z-10 my-12 lg:my-0 space-y-7">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-xs font-mono text-blue-400 tracking-wide uppercase">
-            &lt;/&gt; ENGINEERED BY CHITTORTECH
+        {/* Main Content & Feature Architecture */}
+        <div className="relative z-10 my-8 lg:my-6 space-y-6">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/10 border border-sky-400/30 text-xs font-mono text-sky-300 tracking-wide uppercase shadow-2xs">
+            <span className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-ping" />
+            <span>OFFICIAL MUNICIPAL ADMINISTRATIVE PORTAL</span>
           </div>
 
-          <div>
-            <h1 className="text-3xl lg:text-4xl xl:text-5xl font-extrabold text-white tracking-tight">
-              Nagar Parishad <span className="text-amber-400">Admin</span>
+          <div className="space-y-2">
+            <h1 className="text-3xl sm:text-4xl xl:text-5xl font-extrabold text-white tracking-tight leading-tight">
+              Nagar Parishad <span className="bg-gradient-to-r from-sky-400 via-blue-300 to-amber-300 bg-clip-text text-transparent">Admin</span>
             </h1>
-            <p className="mt-4 text-slate-400 text-sm lg:text-base leading-relaxed max-w-lg">
-              Secure central portal for managing citizen complaints across all 60 wards of Chittorgarh, 
-              live Supabase synchronization, WhatsApp automation, and executive monitoring.
+            <p className="text-xs sm:text-sm text-sky-200/90 font-medium">
+              स्मार्ट शिकायत एवं नागरिक सेवा प्रबंधन प्रणाली &bull; Government of Rajasthan
+            </p>
+            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-xl pt-1">
+              Central administrative portal for Nagar Parishad Chittorgarh. Securely interconnecting 60 Municipal Wards, 
+              Live Chittorgarh Central Database Synchronization, automated Hindi WhatsApp citizen dispatch, and executive SLA monitoring.
             </p>
           </div>
 
-          {/* Feature Bullets */}
-          <div className="space-y-4 pt-2">
-            <div className="flex items-center gap-3.5 text-slate-200 text-sm">
-              <div className="p-2 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 shrink-0">
-                <Database className="w-4 h-4" />
-              </div>
-              <span>Real-time Supabase Cloud Database Sync</span>
+          {/* Core Functional Capabilities (User Requested Section) */}
+          <div className="space-y-2 pt-1">
+            <div className="flex items-center gap-2 pb-1">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-sky-400">
+                Core Administrator &amp; Executive Capabilities
+              </span>
+              <div className="h-px flex-1 bg-gradient-to-r from-sky-500/40 to-transparent" />
             </div>
 
-            <div className="flex items-center gap-3.5 text-slate-200 text-sm">
-              <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 shrink-0">
-                <MapPin className="w-4 h-4" />
-              </div>
-              <span>60-Ward Ward &amp; Councillor GIS Complaint Routing</span>
-            </div>
-
-            <div className="flex items-center gap-3.5 text-slate-200 text-sm">
-              <div className="p-2 rounded-lg bg-purple-500/10 border border-purple-500/20 text-purple-400 shrink-0">
-                <ShieldCheck className="w-4 h-4" />
-              </div>
-              <span>Mandatory 2-Step Citizen-Certified Closure &amp; Hindi WhatsApp</span>
-            </div>
-
-            <div className="flex items-center gap-3.5 text-slate-200 text-sm">
-              <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 shrink-0">
-                <Headphones className="w-4 h-4" />
-              </div>
-              <span>24/7 Dedicated ChittorTech Developer Support</span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              {portalFeatures.map((feat, idx) => (
+                <div 
+                  key={idx}
+                  className="flex items-start gap-2.5 p-2.5 rounded-xl bg-slate-900/60 border border-slate-700/50 hover:border-sky-500/40 hover:bg-slate-800/60 transition-all backdrop-blur-xs"
+                >
+                  <div className={`p-1.5 rounded-lg shrink-0 mt-0.5 border ${feat.accent}`}>
+                    {feat.icon}
+                  </div>
+                  <div className="space-y-0.5 min-w-0">
+                    <h4 className="text-xs font-bold text-slate-100 leading-snug">
+                      {feat.title}
+                    </h4>
+                    <p className="text-[11px] text-slate-400 leading-normal line-clamp-2">
+                      {feat.desc}
+                    </p>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
 
-        {/* Bottom Status */}
-        <div className="relative z-10 flex flex-wrap items-center justify-between gap-4 text-xs text-slate-400 pt-6 border-t border-slate-800/80">
+        {/* Bottom Security & Governance Status */}
+        <div className="relative z-10 flex flex-wrap items-center justify-between gap-4 text-xs text-slate-400 pt-5 border-t border-sky-900/40">
           <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="font-medium text-slate-300">System Status: Fully Operational</span>
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="font-semibold text-slate-200">Live Chittorgarh Central Database: Active &amp; Operational</span>
           </div>
-          <div className="text-slate-500">
-            Cloudflare Edge SSL Protected
+          <div className="text-[11px] text-sky-300/80 font-mono">
+            SSL Edge Encrypted &bull; ISO 27001 Protocol
           </div>
         </div>
       </div>
 
-      {/* RIGHT LOGIN CARD (Matches Reference Screenshot 1) */}
-      <div className="flex items-center justify-center bg-white lg:w-1/2 p-6 sm:p-12 lg:p-16">
+      {/* ========================================================
+          RIGHT LOGIN PANEL: Clean White & Sky-Blue Official Card
+         ======================================================== */}
+      <div className="flex items-center justify-center bg-gradient-to-b from-white via-slate-50/50 to-sky-50/30 lg:w-1/2 p-6 sm:p-10 lg:p-14 xl:p-16">
         <div className="w-full max-w-md space-y-6">
-          <div className="text-center space-y-1">
+          
+          {/* Welcome Header */}
+          <div className="text-center space-y-1.5">
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-sky-100/80 border border-sky-200 text-sky-700 mb-1 shadow-xs">
+              <ShieldCheck className="w-6 h-6 text-sky-600" />
+            </div>
             <h2 className="text-2xl lg:text-3xl font-extrabold text-slate-900 tracking-tight font-serif">
               Welcome Back
             </h2>
-            <p className="text-sm text-slate-500">
-              Please select your role and enter your credentials to access the portal.
+            <p className="text-xs sm:text-sm text-slate-500">
+              Please enter your official municipal credentials to access the portal.
             </p>
           </div>
 
-          {/* Quick Role Switcher for seamless testing */}
+          {/* Official Role Indicator: Portal Manager (Clean, Single Pre-Selected) */}
           <div className="space-y-1.5">
-            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-              Select Role for Demo / Login
-            </label>
-            <div className="grid grid-cols-3 gap-1.5">
-              {rolePresets.map((preset) => (
-                <button
-                  key={preset.role}
-                  type="button"
-                  onClick={() => handleRoleChange(preset.role, preset.email)}
-                  className={`px-2 py-1.5 text-xs font-semibold rounded-lg border text-center transition-all ${
-                    selectedRole === preset.role
-                      ? 'bg-blue-50 border-blue-600 text-blue-700 shadow-xs ring-1 ring-blue-600'
-                      : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
-                  }`}
-                >
-                  {preset.label}
-                </button>
-              ))}
+            <div className="flex items-center justify-between">
+              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600">
+                Select Role for Login
+              </label>
+              <span className="text-[10px] font-bold text-sky-700 uppercase tracking-wider bg-sky-100 px-2 py-0.5 rounded-full border border-sky-200">
+                Authorized Role
+              </span>
+            </div>
+
+            <div className="flex items-center gap-3 p-3 rounded-xl border border-sky-200 bg-gradient-to-r from-sky-50/90 to-blue-50/60 text-slate-800 shadow-2xs">
+              <div className="w-8 h-8 rounded-lg bg-sky-600 text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
+                PM
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-slate-900">Portal Manager</span>
+                  <span className="text-[9px] font-bold uppercase px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 border border-emerald-200">
+                    Active
+                  </span>
+                </div>
+                <span className="text-[11px] text-sky-700 font-mono block truncate">
+                  portalmanager@chittorgarh.gov.in
+                </span>
+              </div>
+              <CheckCircle2 className="w-4 h-4 text-sky-600 shrink-0" />
             </div>
           </div>
 
+          {/* Login Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Email Field */}
             <div className="space-y-1.5">
-              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600">
+              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-700">
                 Official Email Address
               </label>
               <div className="relative">
@@ -175,8 +231,8 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  placeholder="admin@chittortech.com"
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition-all shadow-xs"
+                  placeholder="portalmanager@chittorgarh.gov.in"
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all shadow-2xs"
                 />
               </div>
             </div>
@@ -184,10 +240,14 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
             {/* Password Field */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-600">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-700">
                   Password
                 </label>
-                <a href="#forgot" onClick={(e) => { e.preventDefault(); alert("Please contact ChittorTech Administrator for password recovery."); }} className="text-xs font-semibold text-blue-600 hover:underline">
+                <a 
+                  href="#forgot" 
+                  onClick={(e) => { e.preventDefault(); alert("Please contact ChittorTech Technical Support (+91 7597451057) for password recovery."); }} 
+                  className="text-xs font-semibold text-sky-600 hover:text-sky-700 hover:underline"
+                >
                   Forgot Password?
                 </a>
               </div>
@@ -201,7 +261,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   placeholder="••••••••••••"
-                  className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition-all shadow-xs"
+                  className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all shadow-2xs"
                 />
                 <button
                   type="button"
@@ -216,63 +276,70 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
             {/* Submit Button */}
             <button
               type="submit"
-              className="w-full py-3 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 active:scale-[0.99] text-white font-semibold text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
+              className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-blue-700 via-blue-800 to-slate-900 hover:from-sky-600 hover:to-blue-800 active:scale-[0.99] text-white font-semibold text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
             >
               <span>Sign In to Dashboard</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </form>
 
-          {/* SUPPORT CARD (Matches Reference Screenshot 1) */}
-          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+          {/* DEDICATED CHITTORTECH SUPPORT CARD */}
+          <div className="p-4 rounded-2xl bg-white border border-sky-200/90 shadow-xs space-y-3">
             <div className="flex items-center justify-between text-xs">
-              <div className="flex items-center gap-1.5 text-slate-700 font-medium">
-                <Headphones className="w-4 h-4 text-emerald-600" />
-                <span>NEED HELP? CHITTORTECH SUPPORT</span>
+              <div className="flex items-center gap-1.5 text-slate-800 font-bold tracking-tight">
+                <Headphones className="w-4 h-4 text-sky-600" />
+                <span>CHITTORTECH DEDICATED SUPPORT</span>
               </div>
-              <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-semibold text-[10px]">
+              <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px] border border-emerald-200">
                 24/7 Priority
               </span>
             </div>
 
+            {/* Quick Call & WhatsApp Buttons */}
             <div className="grid grid-cols-2 gap-2 text-xs">
               <a 
-                href="tel:+917426016636" 
-                className="flex items-center justify-center gap-1.5 p-2 bg-white rounded-lg border border-slate-200 font-medium text-slate-700 hover:bg-slate-100 transition-colors"
+                href="tel:+917597451057" 
+                className="flex items-center justify-center gap-1.5 p-2 bg-sky-50/70 rounded-lg border border-sky-200 font-semibold text-sky-900 hover:bg-sky-100 transition-colors shadow-2xs"
               >
-                <Phone className="w-3.5 h-3.5 text-blue-600" />
-                <span>+91 7426016636</span>
+                <Phone className="w-3.5 h-3.5 text-sky-600" />
+                <span>+91 7597451057</span>
               </a>
               <a 
-                href="https://wa.me/917426016636" 
+                href="https://wa.me/917597451057" 
                 target="_blank" 
                 rel="noreferrer" 
-                className="flex items-center justify-center gap-1.5 p-2 bg-white rounded-lg border border-slate-200 font-medium text-emerald-700 hover:bg-emerald-50 transition-colors"
+                className="flex items-center justify-center gap-1.5 p-2 bg-emerald-50/70 rounded-lg border border-emerald-200 font-semibold text-emerald-900 hover:bg-emerald-100 transition-colors shadow-2xs"
               >
                 <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
                 <span>WhatsApp</span>
               </a>
             </div>
 
-            <div className="space-y-1 text-[11px] text-slate-500 border-t border-slate-200 pt-2.5">
+            {/* Alternate Numbers & Emails */}
+            <div className="space-y-1.5 text-[11px] text-slate-600 border-t border-slate-100 pt-2.5">
               <div className="flex items-center gap-1.5">
-                <Phone className="w-3 h-3 text-slate-400" />
-                <span>Alternate: +91 9424466992</span>
+                <Phone className="w-3 h-3 text-slate-400 shrink-0" />
+                <span>
+                  Alternate: <a href="tel:+917597901057" className="text-slate-800 hover:underline font-mono font-medium">+91 7597901057</a>, <a href="tel:+918233816674" className="text-slate-800 hover:underline font-mono font-medium">+91 8233816674</a>
+                </span>
               </div>
               <div className="flex items-center gap-1.5">
-                <Mail className="w-3 h-3 text-slate-400" />
-                <span>support@chittortech.com</span>
+                <Mail className="w-3 h-3 text-slate-400 shrink-0" />
+                <span>
+                  Email: <a href="mailto:support@chittortech.in" className="text-sky-700 hover:underline font-medium">support@chittortech.in</a> &bull; <a href="mailto:business@chittortech.in" className="text-sky-700 hover:underline font-medium">business@chittortech.in</a>
+                </span>
               </div>
             </div>
 
-            <div className="text-center pt-1">
+            {/* Portal Link */}
+            <div className="text-center pt-1 border-t border-slate-100">
               <a 
-                href="https://chittortech.com" 
+                href="https://chittortech.in" 
                 target="_blank" 
                 rel="noreferrer" 
-                className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-600 hover:underline"
+                className="inline-flex items-center gap-1 text-[11px] font-semibold text-sky-700 hover:text-sky-900 hover:underline"
               >
-                <span>Visit ChittorTech Portal (chittortech.com)</span>
+                <span>Visit Official ChittorTech Portal (chittortech.in)</span>
                 <ExternalLink className="w-3 h-3" />
               </a>
             </div>
@@ -280,6 +347,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
 
         </div>
       </div>
+
     </div>
   );
 };

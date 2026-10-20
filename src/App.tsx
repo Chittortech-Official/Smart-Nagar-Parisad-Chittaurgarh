@@ -3,6 +3,7 @@ import type { UserRole, Ticket, IntakeComplaint, NotificationLog, Ward, Departme
 import { INITIAL_WARDS, INITIAL_DEPARTMENTS, INITIAL_TICKETS, INITIAL_INTAKES, INITIAL_NOTIFICATIONS } from './data/initialData';
 import { LoginView } from './components/LoginView';
 import { DashboardView } from './components/DashboardView';
+import { SecurityDeviceGuard } from './components/SecurityDeviceGuard';
 import { supabase, isSupabaseConfigured } from './lib/supabaseClient';
 
 export function App() {
@@ -66,27 +67,29 @@ export function App() {
   };
 
   return (
-    <div className="w-full min-h-screen bg-slate-100 antialiased">
-      {!currentUser ? (
-        <LoginView onLogin={handleLogin} />
-      ) : (
-        <DashboardView
-          userRole={currentUser.role}
-          userEmail={currentUser.email}
-          onLogout={handleLogout}
-          wards={wards}
-          departments={departments}
-          tickets={tickets}
-          intakes={intakes}
-          notifications={notifications}
-          onUpdateTicket={handleUpdateTicket}
-          onAddTicket={handleAddTicket}
-          onUpdateIntake={handleUpdateIntake}
-          onAddIntake={handleAddIntake}
-          onAddNotification={handleAddNotification}
-        />
-      )}
-    </div>
+    <SecurityDeviceGuard>
+      <div className="w-full min-h-screen bg-slate-100 antialiased">
+        {!currentUser ? (
+          <LoginView onLogin={handleLogin} />
+        ) : (
+          <DashboardView
+            userRole={currentUser.role}
+            userEmail={currentUser.email}
+            onLogout={handleLogout}
+            wards={wards}
+            departments={departments}
+            tickets={tickets}
+            intakes={intakes}
+            notifications={notifications}
+            onUpdateTicket={handleUpdateTicket}
+            onAddTicket={handleAddTicket}
+            onUpdateIntake={handleUpdateIntake}
+            onAddIntake={handleAddIntake}
+            onAddNotification={handleAddNotification}
+          />
+        )}
+      </div>
+    </SecurityDeviceGuard>
   );
 }
 
