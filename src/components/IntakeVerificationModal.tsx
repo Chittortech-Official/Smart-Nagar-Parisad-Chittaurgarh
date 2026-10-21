@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { IntakeComplaint, ForwardingOption } from '../types';
+import type { IntakeComplaint } from '../types';
 import { 
   X, 
   CheckCircle2, 
@@ -12,7 +12,7 @@ import {
 interface IntakeVerificationModalProps {
   intake: IntakeComplaint;
   onClose: () => void;
-  onAccept: (intakeId: string, forwardingOption: ForwardingOption, slaHours: number) => void;
+  onAccept: (intakeId: string, slaHours: number) => void;
   onReject: (intakeId: string, reason: string) => void;
 }
 
@@ -22,14 +22,13 @@ export const IntakeVerificationModal = ({
   onAccept,
   onReject
 }: IntakeVerificationModalProps) => {
-  const [forwardingOption, setForwardingOption] = useState<ForwardingOption>('COUNCILLOR_AND_OFFICER');
-  const [slaHours, setSlaHours] = useState(48);
+  const [slaHours, setSlaHours] = useState<number>(intake.sla_hours ?? 0.008333);
   const [showRejectForm, setShowRejectForm] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
 
   const handleAccept = (e: React.FormEvent) => {
     e.preventDefault();
-    onAccept(intake.id, forwardingOption, slaHours);
+    onAccept(intake.id, slaHours);
   };
 
   const handleReject = (e: React.FormEvent) => {
@@ -117,64 +116,8 @@ export const IntakeVerificationModal = ({
           {/* ACCEPT FORM */}
           {!showRejectForm ? (
             <form onSubmit={handleAccept} className="space-y-4 pt-2 border-t border-slate-200">
-              {/* Forwarding Option Selector (Workflow C) */}
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-wider text-slate-700 block">
-                  Workflow C: Select Complaint Forwarding Option
-                </label>
-                <div className="grid grid-cols-1 gap-2">
-                  <label className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
-                    forwardingOption === 'COUNCILLOR_AND_OFFICER' ? 'bg-blue-50 border-blue-600 ring-1 ring-blue-600' : 'hover:bg-slate-50 border-slate-200'
-                  }`}>
-                    <input
-                      type="radio"
-                      name="forwarding"
-                      checked={forwardingOption === 'COUNCILLOR_AND_OFFICER'}
-                      onChange={() => setForwardingOption('COUNCILLOR_AND_OFFICER')}
-                      className="mt-0.5"
-                    />
-                    <div>
-                      <span className="font-bold text-xs text-slate-900">Option 1: Councillor + Departmental Officer (Recommended)</span>
-                      <p className="text-[11px] text-slate-500">Notifies both the Ward Councillor and the responsible municipal department head via WhatsApp/SMS.</p>
-                    </div>
-                  </label>
-
-                  <label className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
-                    forwardingOption === 'COUNCILLOR_ONLY' ? 'bg-blue-50 border-blue-600 ring-1 ring-blue-600' : 'hover:bg-slate-50 border-slate-200'
-                  }`}>
-                    <input
-                      type="radio"
-                      name="forwarding"
-                      checked={forwardingOption === 'COUNCILLOR_ONLY'}
-                      onChange={() => setForwardingOption('COUNCILLOR_ONLY')}
-                      className="mt-0.5"
-                    />
-                    <div>
-                      <span className="font-bold text-xs text-slate-900">Option 2: Ward Councillor Only</span>
-                      <p className="text-[11px] text-slate-500">Forwards complaint details exclusively to the elected Ward Councillor.</p>
-                    </div>
-                  </label>
-
-                  <label className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
-                    forwardingOption === 'OFFICER_ONLY' ? 'bg-blue-50 border-blue-600 ring-1 ring-blue-600' : 'hover:bg-slate-50 border-slate-200'
-                  }`}>
-                    <input
-                      type="radio"
-                      name="forwarding"
-                      checked={forwardingOption === 'OFFICER_ONLY'}
-                      onChange={() => setForwardingOption('OFFICER_ONLY')}
-                      className="mt-0.5"
-                    />
-                    <div>
-                      <span className="font-bold text-xs text-slate-900">Option 3: Departmental Officer Only</span>
-                      <p className="text-[11px] text-slate-500">Forwards directly to the field execution engineer without alerting the councillor.</p>
-                    </div>
-                  </label>
-                </div>
-              </div>
-
               {/* SLA Selector */}
-              <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200">
+              <div className="flex items-center justify-between p-3.5 bg-slate-50 rounded-xl border border-slate-200">
                 <div className="flex items-center gap-2">
                   <Clock className="w-4 h-4 text-slate-500" />
                   <span className="text-xs font-semibold text-slate-700">Configured SLA Deadline:</span>
@@ -184,6 +127,8 @@ export const IntakeVerificationModal = ({
                   onChange={(e) => setSlaHours(Number(e.target.value))}
                   className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-bold text-slate-800"
                 >
+                  <option value={0.008333}>⚡ 30 Seconds (Fast Testing / टेस्टिंग)</option>
+                  <option value={0.016667}>⚡ 1 Minute (Fast Testing / टेस्टिंग)</option>
                   <option value={12}>12 Hours (Emergency Removal)</option>
                   <option value={24}>24 Hours (Sanitation Standard)</option>
                   <option value={48}>48 Hours (Streetlights / Drains)</option>

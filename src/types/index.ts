@@ -61,6 +61,7 @@ export interface IntakeComplaint {
   status: 'PENDING_REVIEW' | 'ACCEPTED' | 'REJECTED';
   rejection_reason?: string;
   is_after_hours: boolean;
+  sla_hours?: number;
   received_at: string;
 }
 
@@ -79,6 +80,7 @@ export interface Ticket {
   forwarding_option: ForwardingOption;
   sla_hours: number;
   sla_deadline: string;
+  sla_deadline_iso?: string;
   is_overdue: boolean;
   is_escalated: boolean;
   escalation_notes?: string;

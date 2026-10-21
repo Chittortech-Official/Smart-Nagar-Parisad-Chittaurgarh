@@ -10,6 +10,7 @@ import {
   MessageSquare, 
   Send
 } from 'lucide-react';
+import { getWhatsAppUrl } from '../lib/whatsapp';
 
 interface TwoStepClosureModalProps {
   ticket: Ticket;
@@ -26,9 +27,9 @@ export const TwoStepClosureModal = ({
 }: TwoStepClosureModalProps) => {
 
   const [activeStep, setActiveStep] = useState<1 | 2>(ticket.authority_confirmed ? 2 : 1);
-  const [authorityNotes, setAuthorityNotes] = useState(ticket.authority_notes || '');
-  const [citizenFeedback, setCitizenFeedback] = useState('');
-  const [citizenSatisfied, setCitizenSatisfied] = useState<boolean | null>(null);
+  const [authorityNotes, setAuthorityNotes] = useState(ticket.authority_notes || 'Field team & responsible officer verified on-site completion.');
+  const [citizenFeedback, setCitizenFeedback] = useState('Citizen confirmed problem resolved satisfactorily on verification call.');
+  const [citizenSatisfied, setCitizenSatisfied] = useState<boolean | null>(true);
   const [callOutcome, setCallOutcome] = useState('ANSWERED_CONFIRMED');
 
   const todayDateStr = new Date().toLocaleDateString('hi-IN', {
@@ -37,18 +38,34 @@ export const TwoStepClosureModal = ({
     year: 'numeric'
   });
 
-  const hindiWhatsAppMessage = `नमस्कार!
+  const hindiWhatsAppMessage = `🏛️ *स्मार्ट नगर परिषद चित्तौड़गढ़*
+*शिकायत समाधान सूचना* ✅
 
-आपकी शिकायत संख्या ${ticket.ticket_number} के संबंध में सूचित किया जाता है कि आपकी समस्या के समाधान की पुष्टि आपके द्वारा कर दी गई है।
+🙏 *नमस्ते ${ticket.citizen_name} जी,*
 
-शिकायत का प्रकार: ${ticket.category_name}
-स्थान: ${ticket.address}, वार्ड ${ticket.ward_number}
-समाधान दिनांक: ${todayDateStr}
+आपकी शिकायत संख्या *${ticket.ticket_number}* का नगर परिषद टीम द्वारा सफलतापूर्वक समाधान कर दिया गया है एवं आपके द्वारा सत्यापन भी प्राप्त हो चुका है।
 
-आपकी पुष्टि के बाद शिकायत को स्मार्ट नगर परिषद चित्तौड़गढ़ के सिस्टम में बंद कर दिया गया है।
+📋 *समाधान विवरण:*
+━━━━━━━━━━━━━━━━━━━
+▫️ *टिकट सं.:* ${ticket.ticket_number}
+▫️ *विभाग:* ${ticket.department_name}
+▫️ *वार्ड सं.:* वार्ड ${ticket.ward_number}
+▫️ *समाधान दिनांक:* ${todayDateStr}
+▫️ *अंतिम स्थिति:* *सफलतापूर्वक निस्तारित एवं बंद (CLOSED)* ✅
+━━━━━━━━━━━━━━━━━━━
 
-धन्यवाद!
-स्मार्ट नगर परिषद चित्तौड़गढ़, राजस्थान`;
+📞 *नागरिक सुविधा सूचना (भविष्य में नई शिकायत हेतु):*
+• *कार्यालय समय (सुबह 10:00 AM से शाम 06:00 PM):*
+  हमारे कंट्रोल रूम हेल्पलाइन नंबर पर कॉल करके शिकायत दर्ज करा सकते हैं: *01472-240001*
+• *कार्यालय समय के बाद (शाम 06:00 PM से सुबह 10:00 AM) एवं 24/7:*
+  आप कभी भी इसी WhatsApp नंबर पर अपनी शिकायत लिखकर भेज सकते हैं।
+
+🤝 *हम आपकी सेवा में सदैव तत्पर हैं।*
+"स्वच्छ चित्तौड़गढ़, स्वस्थ एवं सुंदर चित्तौड़गढ़"
+
+*आपका शुभचिंतक,*
+*अनिल ईनाणी* (सभापति)
+नगर परिषद चित्तौड़गढ़ 🙏`;
 
   const handleStep1Submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,12 +83,19 @@ export const TwoStepClosureModal = ({
       alert("Please record whether the citizen confirmed satisfaction or reported unresolved.");
       return;
     }
+
+    // Auto-launch WhatsApp if citizen is satisfied
+    if (citizenSatisfied === true) {
+      const waUrl = getWhatsAppUrl(ticket.citizen_phone, hindiWhatsAppMessage);
+      window.open(waUrl, '_blank');
+    }
+
     onConfirmCitizen(ticket.id, citizenSatisfied, citizenFeedback, callOutcome);
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-      <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="relative w-full max-w-3xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92vh]">
         {/* Modal Header */}
         <div className="flex items-center justify-between px-6 py-4 bg-slate-900 text-white">
           <div className="flex items-center gap-2.5">
@@ -279,14 +303,36 @@ export const TwoStepClosureModal = ({
 
               {/* Official Hindi WhatsApp Template Preview if satisfied */}
               {citizenSatisfied === true && (
-                <div className="p-3.5 bg-emerald-50/70 border border-emerald-200 rounded-xl space-y-2">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-900">
-                    <MessageSquare className="w-4 h-4 text-emerald-600" />
-                    <span>Official Hindi WhatsApp Closure Message (Auto-dispatched)</span>
+                <div className="p-5 sm:p-6 bg-slate-50 border border-slate-200 rounded-2xl space-y-4 shadow-2xs">
+                  <div className="flex items-center justify-between pb-1 border-b border-slate-200/60">
+                    <div className="flex items-center gap-2 text-xs font-bold text-slate-800">
+                      <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
+                        <MessageSquare className="w-3.5 h-3.5" />
+                      </div>
+                      <span>WhatsApp Preview (Clear &amp; Spaced Format)</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                      Official Notice
+                    </span>
                   </div>
-                  <pre className="text-[11px] bg-white p-3 rounded-lg border border-emerald-200 text-slate-800 font-sans whitespace-pre-wrap leading-relaxed shadow-2xs">
-                    {hindiWhatsAppMessage}
-                  </pre>
+
+                  {/* Clean WhatsApp Chat Bubble with Generous Margins & Line Height */}
+                  <div className="bg-emerald-50/60 p-4 sm:p-5 rounded-2xl border border-emerald-200/70 shadow-xs">
+                    <pre className="text-xs sm:text-[13px] bg-white p-4 sm:p-5 rounded-xl border border-emerald-100/80 text-slate-900 font-sans whitespace-pre-wrap leading-6 sm:leading-7 tracking-wide shadow-2xs">
+                      {hindiWhatsAppMessage}
+                    </pre>
+                  </div>
+
+                  {/* Direct 1-Click WhatsApp Button requested by user */}
+                  <a
+                    href={getWhatsAppUrl(ticket.citizen_phone, hindiWhatsAppMessage)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full py-3 px-5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2.5 shadow-md shadow-emerald-600/15 transition-all active:scale-98 cursor-pointer"
+                  >
+                    <MessageSquare className="w-4 h-4" />
+                    <span>📲 WhatsApp खोलें एवं नागरिक ({ticket.citizen_name}) को भेजें</span>
+                  </a>
                 </div>
               )}
 

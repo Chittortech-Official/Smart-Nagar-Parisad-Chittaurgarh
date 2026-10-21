@@ -1,4 +1,4 @@
-import { useState, useEffect, ReactNode } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import { ShieldAlert, Laptop, Monitor, AlertTriangle, Phone, RefreshCw } from 'lucide-react';
 import { NagarParishadLogo } from './NagarParishadLogo';
 
