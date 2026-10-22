@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CheckCircle2, AlertTriangle, XCircle, Info, MessageSquare, ExternalLink } from 'lucide-react';
+import { Check, AlertTriangle, XCircle, Info, MessageSquare, ExternalLink } from 'lucide-react';
 
 export type StatusModalType = 'confirm' | 'success' | 'warning' | 'error' | 'info';
 
@@ -68,14 +68,14 @@ export function StatusModal({ config, onClose }: StatusModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
       <div 
-        className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-200 p-7 text-center space-y-4.5 animate-in zoom-in-95 duration-200 select-none max-h-[90vh] overflow-y-auto"
+        className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-200 p-8 text-center space-y-4 animate-in zoom-in-95 duration-200 select-none max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Top Circular Icon */}
+        {/* Top Circular Icon (AMPLR Health Style) */}
         <div className="flex justify-center">
           {isSuccess && (
-            <div className="w-18 h-18 rounded-full border-4 border-emerald-400 bg-emerald-50 flex items-center justify-center shadow-inner">
-              <CheckCircle2 className="w-11 h-11 text-emerald-600 stroke-[2.2]" />
+            <div className="w-20 h-20 rounded-full border-4 border-emerald-300 bg-emerald-50/60 flex items-center justify-center shadow-inner">
+              <Check className="w-10 h-10 text-emerald-500 stroke-[3]" />
             </div>
           )}
 
@@ -253,17 +253,17 @@ export function StatusModal({ config, onClose }: StatusModalProps) {
                 onClose();
               }
             }}
-            className={`px-6 py-2.5 rounded-xl font-bold text-xs text-white shadow-md transition-all active:scale-95 cursor-pointer ${
+            className={`px-8 py-2.5 rounded-xl font-bold text-sm text-white shadow-md transition-all active:scale-95 cursor-pointer ${
               isConfirm
-                ? 'bg-emerald-600 hover:bg-emerald-700'
+                ? 'bg-teal-700 hover:bg-teal-800'
                 : isSuccess
-                ? 'bg-emerald-600 hover:bg-emerald-700'
+                ? 'bg-teal-700 hover:bg-teal-800'
                 : isError
                 ? 'bg-rose-600 hover:bg-rose-700'
                 : 'bg-blue-600 hover:bg-blue-700'
             }`}
           >
-            {config.confirmText || (isSuccess ? 'Done / Close' : 'Yes, Confirm!')}
+            {config.confirmText || (isSuccess ? 'OK' : 'Yes, Confirm!')}
           </button>
         </div>
       </div>

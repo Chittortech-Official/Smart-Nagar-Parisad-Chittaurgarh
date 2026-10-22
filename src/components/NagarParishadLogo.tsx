@@ -2,12 +2,18 @@ interface LogoProps {
   className?: string;
   size?: 'sm' | 'md' | 'lg';
   theme?: 'dark' | 'light';
+  hindiTitle?: string;
+  englishSubtitle?: string;
+  softwareBadge?: string;
 }
 
 export const NagarParishadLogo = ({ 
   className = '', 
   size = 'md', 
-  theme = 'light' 
+  theme = 'light',
+  hindiTitle = 'नगर परिषद चित्तौड़गढ़',
+  englishSubtitle = 'Nagar Parishad Chittorgarh',
+  softwareBadge
 }: LogoProps) => {
 
   const sizeMap = {
@@ -17,7 +23,7 @@ export const NagarParishadLogo = ({
   };
 
   return (
-    <div className={`flex items-center gap-3 ${className}`}>
+    <div className={`flex items-center gap-2.5 ${className}`}>
       {/* Emblem SVG Icon */}
       <div className={`relative flex items-center justify-center rounded-xl bg-gradient-to-br from-amber-500 via-amber-600 to-amber-700 p-2 shadow-lg ring-2 ring-amber-400/30 ${sizeMap[size]} shrink-0`}>
         <svg 
@@ -47,13 +53,18 @@ export const NagarParishadLogo = ({
       </div>
 
       {/* Typography */}
-      <div className="flex flex-col text-left">
-        <span className={`font-bold tracking-tight leading-tight ${theme === 'dark' ? 'text-white' : 'text-slate-900'} ${size === 'lg' ? 'text-xl' : size === 'md' ? 'text-base' : 'text-sm'}`}>
-          नगर परिषद चित्तौड़गढ़
+      <div className="flex flex-col text-left min-w-0">
+        <span className={`font-bold tracking-tight leading-tight truncate ${theme === 'dark' ? 'text-white' : 'text-slate-900'} ${size === 'lg' ? 'text-xl' : size === 'md' ? 'text-base' : 'text-xs'}`}>
+          {hindiTitle}
         </span>
-        <span className={`text-[11px] font-semibold tracking-wider uppercase ${theme === 'dark' ? 'text-amber-400' : 'text-amber-700'}`}>
-          Nagar Parishad Chittorgarh
+        <span className={`text-[10px] font-semibold tracking-wider uppercase truncate ${theme === 'dark' ? 'text-amber-400' : 'text-amber-700'}`}>
+          {englishSubtitle}
         </span>
+        {softwareBadge && (
+          <span className="text-[9px] font-mono font-medium text-sky-400 tracking-wide mt-0.5">
+            {softwareBadge}
+          </span>
+        )}
       </div>
     </div>
   );

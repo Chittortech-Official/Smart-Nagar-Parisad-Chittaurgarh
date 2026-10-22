@@ -17,6 +17,8 @@ import { StatusModal } from './StatusModal';
 import { cleanPhoneForWhatsApp } from '../lib/whatsapp';
 import type { StatusModalConfig, WhatsAppAction } from './StatusModal';
 import { TabGuideBanner } from './TabGuideBanner';
+import { AdminFooter } from './AdminFooter';
+import { HelpSupportView } from './HelpSupportView';
 import { 
   LayoutDashboard, 
   Inbox, 
@@ -42,7 +44,9 @@ import {
   Calendar,
   Layers,
   ArrowUpRight,
-  Pencil
+  Pencil,
+  Sparkles,
+  Headphones
 } from 'lucide-react';
 
 interface DashboardViewProps {
@@ -59,9 +63,9 @@ interface DashboardViewProps {
   onUpdateIntake: (intake: IntakeComplaint) => void;
   onAddIntake: (intake: IntakeComplaint) => void;
   onAddNotification: (notif: NotificationLog) => void;
-  onUpdateWard?: (ward: Ward) => void;
-  onUpdateDepartment?: (dept: Department) => void;
-  onAddDepartment?: (dept: Department) => void;
+  onUpdateWard?: (ward: Ward) => Promise<void> | void;
+  onUpdateDepartment?: (dept: Department) => Promise<void> | void;
+  onAddDepartment?: (dept: Department) => Promise<void> | void;
 }
 
 export const DashboardView = ({
@@ -72,7 +76,7 @@ export const DashboardView = ({
   departments,
   tickets,
   intakes,
-  notifications,
+  notifications: _notifications,
   onUpdateTicket,
   onAddTicket,
   onUpdateIntake,
@@ -83,7 +87,7 @@ export const DashboardView = ({
   onAddDepartment
 }: DashboardViewProps) => {
 
-  const [activeTab, setActiveTab] = useState<'DASHBOARD' | 'INTAKE' | 'TICKETS' | 'CLOSED' | 'SLA' | 'WARDS' | 'DEPARTMENTS' | 'WHATSAPP' | 'SETTINGS'>('DASHBOARD');
+  const [activeTab, setActiveTab] = useState<'DASHBOARD' | 'INTAKE' | 'TICKETS' | 'CLOSED' | 'SLA' | 'WARDS' | 'DEPARTMENTS' | 'SETTINGS' | 'SUPPORT'>('DASHBOARD');
   
   // Advanced Filters State
   const [filtersOpen, setFiltersOpen] = useState(true);
@@ -124,67 +128,50 @@ export const DashboardView = ({
   const [parshadSearch, setParshadSearch] = useState('');
   const [departmentSearch, setDepartmentSearch] = useState('');
 
-  const handleSaveWard = (updatedWard: Ward) => {
-    onUpdateWard?.(updatedWard);
+  const handleSaveWard = async (updatedWard: Ward) => {
+    await onUpdateWard?.(updatedWard);
     setStatusModalConfig({
       isOpen: true,
       type: 'success',
-      title: 'पार्षद विवरण अपडेट हुआ (Parshad Updated)',
-      subtitle: `वार्ड ${updatedWard.ward_number} (${updatedWard.ward_name}) के पार्षद का विवरण सफलतापूर्वक अपडेट कर दिया गया है।`,
-      details: [
-        `पार्षद का नाम: ${updatedWard.councillor_name}`,
-        `मोबाइल नंबर: ${updatedWard.councillor_phone}`,
-        `जोन: ${updatedWard.zone}`,
-        `प्रमुख लैंडमार्क: ${updatedWard.key_landmarks || 'N/A'}`
-      ],
-      confirmText: 'ठीक है (OK)'
+      title: 'Updated!',
+      subtitle: `Ward ${updatedWard.ward_number} Parshad details have been saved.`,
+      confirmText: 'OK'
     });
   };
 
-  const handleSaveDepartment = (dept: Department) => {
-    if (editingDepartment) {
-      onUpdateDepartment?.(dept);
-      setStatusModalConfig({
-        isOpen: true,
-        type: 'success',
-        title: 'विभाग विवरण अपडेट हुआ (Department Updated)',
-        subtitle: `विभाग "${dept.name}" के विवरण सफलतापूर्वक अपडेट कर दिए गए हैं।`,
-        details: [
-          `विभाग कोड: ${dept.code}`,
-          `मानक SLA: ${dept.default_sla_hours} घंटे`,
-          `नोडल अधिकारी: ${dept.head_officer_name} (${dept.head_officer_phone})`
-        ],
-        confirmText: 'ठीक है (OK)'
-      });
+  const handleSaveDepartment = async (dept: Department) => {
+    const isEdit = Boolean(editingDepartment);
+    if (isEdit) {
+      await onUpdateDepartment?.(dept);
     } else {
-      onAddDepartment?.(dept);
-      setStatusModalConfig({
-        isOpen: true,
-        type: 'success',
-        title: 'नया विभाग जोड़ा गया (Department Added)',
-        subtitle: `नया विभाग "${dept.name}" सफलतापूर्वक जोड़ दिया गया है।`,
-        details: [
-          `विभाग कोड: ${dept.code}`,
-          `मानक SLA: ${dept.default_sla_hours} घंटे`,
-          `नोडल अधिकारी: ${dept.head_officer_name} (${dept.head_officer_phone})`
-        ],
-        confirmText: ' ठीक है (OK)'
-      });
+      await onAddDepartment?.(dept);
     }
+    setStatusModalConfig({
+      isOpen: true,
+      type: 'success',
+      title: isEdit ? 'Updated!' : 'Added!',
+      subtitle: isEdit
+        ? `Department "${dept.name}" details have been saved.`
+        : `New department "${dept.name}" has been added.`,
+      confirmText: 'OK'
+    });
   };
 
-  // Filtered wards for 60 Parshad list search
+  // Filtered wards for 60 Parshad list search (Strictly sorted 1 to 60)
   const filteredWards = useMemo(() => {
-    if (!parshadSearch.trim()) return wards;
-    const q = parshadSearch.toLowerCase();
-    return wards.filter(w => 
-      w.ward_number.toString().includes(q) ||
-      w.ward_name.toLowerCase().includes(q) ||
-      w.councillor_name.toLowerCase().includes(q) ||
-      w.councillor_phone.includes(q) ||
-      w.zone.toLowerCase().includes(q) ||
-      w.key_landmarks.toLowerCase().includes(q)
-    );
+    let list = wards;
+    if (parshadSearch.trim()) {
+      const q = parshadSearch.toLowerCase();
+      list = wards.filter(w => 
+        w.ward_number.toString().includes(q) ||
+        w.ward_name.toLowerCase().includes(q) ||
+        w.councillor_name.toLowerCase().includes(q) ||
+        w.councillor_phone.includes(q) ||
+        w.zone.toLowerCase().includes(q) ||
+        w.key_landmarks.toLowerCase().includes(q)
+      );
+    }
+    return [...list].sort((a, b) => a.ward_number - b.ward_number);
   }, [wards, parshadSearch]);
 
   // Filtered departments for municipal department directory search
@@ -325,8 +312,8 @@ export const DashboardView = ({
       setStatusModalConfig({
         isOpen: true,
         type: 'success',
-        title: 'Ticket Successfully Closed!',
-        subtitle: `Ticket ${target.ticket_number} has been certified closed with verified citizen satisfaction. Official WhatsApp closure receipt dispatched.`,
+        title: 'Closed!',
+        subtitle: `Ticket ${target.ticket_number} has been certified closed. Official WhatsApp closure receipt dispatched to citizen.`,
         details: [
           `Ticket Number: ${target.ticket_number}`,
           `Citizen: ${target.citizen_name} (${target.citizen_phone})`,
@@ -348,8 +335,8 @@ export const DashboardView = ({
       setStatusModalConfig({
         isOpen: true,
         type: 'warning',
-        title: 'Ticket Reopened!',
-        subtitle: `Citizen reported unresolved issue. Ticket ${target.ticket_number} has been returned to officer ${target.assigned_officer_name} for priority execution.`,
+        title: 'Reopened!',
+        subtitle: `Ticket ${target.ticket_number} has been returned to officer ${target.assigned_officer_name} for priority resolution.`,
         details: [
           `Ticket Number: ${target.ticket_number}`,
           `Citizen Feedback: ${feedback || 'Reported Unresolved'}`
@@ -502,8 +489,8 @@ export const DashboardView = ({
     setStatusModalConfig({
       isOpen: true,
       type: 'success',
-      title: 'Official Ticket Generated Successfully!',
-      subtitle: `Ticket ${ticketNum} has been officially issued. Citizen confirmation is ready. You can forward to Ward Councillor, Departmental Officer, or both below.`,
+      title: 'Ticket Generated!',
+      subtitle: `Official ticket ${ticketNum} has been generated. Pre-filled WhatsApp dispatch options are ready below.`,
       details: [
         `Ticket ID: ${ticketNum}`,
         `Citizen: ${intake.citizen_name} (${intake.citizen_phone})`,
@@ -512,7 +499,7 @@ export const DashboardView = ({
         `Resolution SLA: ${formatSlaLabel(deadlineHours)}`
       ],
       whatsAppActions: waActions,
-      confirmText: 'Done / Close'
+      confirmText: 'OK'
     });
   };
 
@@ -522,34 +509,18 @@ export const DashboardView = ({
 
     setSelectedIntakeForVerification(null);
 
-    // Step 1: Confirmation Modal (English)
+    onUpdateIntake({
+      ...intake,
+      status: 'REJECTED',
+      rejection_reason: reason
+    });
+
     setStatusModalConfig({
       isOpen: true,
-      type: 'confirm',
-      title: 'Reject Complaint Intake?',
-      subtitle: `Are you sure you want to reject the grievance submitted by ${intake.citizen_name}?`,
-      details: [
-        `Rejection Reason: ${reason}`,
-        `Audit Log: Reason will be recorded permanently in the official audit trail.`
-      ],
-      confirmText: 'Yes, Reject',
-      cancelText: 'Cancel',
-      onConfirm: () => {
-        onUpdateIntake({
-          ...intake,
-          status: 'REJECTED',
-          rejection_reason: reason
-        });
-
-        // Step 2: Success Modal (English)
-        setStatusModalConfig({
-          isOpen: true,
-          type: 'warning',
-          title: 'Complaint Rejected',
-          subtitle: 'The intake complaint has been rejected and permanently recorded in the municipal audit trail.',
-          confirmText: 'OK'
-        });
-      }
+      type: 'warning',
+      title: 'Rejected!',
+      subtitle: `Complaint from ${intake.citizen_name} has been rejected and permanently recorded in the municipal audit trail.`,
+      confirmText: 'OK'
     });
   };
 
@@ -610,13 +581,18 @@ export const DashboardView = ({
   return (
     <div className="flex h-screen bg-slate-100 font-sans overflow-hidden min-w-[1024px]">
       {/* 1. LEFT SIDEBAR NAVIGATION (Compact & Optimized for Maximum Content Area) */}
-      <aside className="w-52 bg-slate-900 border-r border-slate-800 flex flex-col justify-between shrink-0 select-none">
+      <aside className="w-56 bg-slate-900 border-r border-slate-800 flex flex-col justify-between shrink-0 select-none">
         <div>
-          {/* Sidebar Header Brand */}
-          <div className="p-3 border-b border-slate-800/80">
-            <NagarParishadLogo size="sm" theme="dark" />
+          {/* Sidebar Header Brand: Nagar Parishad Portal */}
+          <div className="p-3 border-b border-slate-800/80 bg-slate-950/40">
+            <NagarParishadLogo 
+              size="sm" 
+              theme="dark"
+              hindiTitle="नगर परिषद पोर्टल"
+              englishSubtitle="Nagar Parishad Portal"
+            />
             <div className="mt-1.5 text-[9px] uppercase font-mono tracking-wider text-slate-400 pl-0.5">
-              ADMIN PORTAL &bull; CHITTORTECH
+              ADMIN PORTAL &bull; CHITTORGARH
             </div>
           </div>
 
@@ -758,19 +734,6 @@ export const DashboardView = ({
 
                 <button
                   type="button"
-                  onClick={() => setActiveTab('WHATSAPP')}
-                  className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs font-semibold transition-all ${
-                    activeTab === 'WHATSAPP'
-                      ? 'bg-blue-600 text-white shadow-md'
-                      : 'text-slate-400 hover:text-white hover:bg-slate-800'
-                  }`}
-                >
-                  <MessageSquare className="w-3.5 h-3.5 shrink-0" />
-                  <span>WhatsApp Logs</span>
-                </button>
-
-                <button
-                  type="button"
                   onClick={() => setActiveTab('SETTINGS')}
                   className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs font-semibold transition-all ${
                     activeTab === 'SETTINGS'
@@ -781,9 +744,44 @@ export const DashboardView = ({
                   <Settings className="w-3.5 h-3.5 shrink-0" />
                   <span>Settings &amp; Hours</span>
                 </button>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('SUPPORT')}
+                  className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs font-semibold transition-all ${
+                    activeTab === 'SUPPORT'
+                      ? 'bg-blue-600 text-white shadow-md'
+                      : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                  }`}
+                >
+                  <Headphones className="w-3.5 h-3.5 shrink-0" />
+                  <span>Help &amp; Support</span>
+                </button>
               </div>
             </div>
           </div>
+        </div>
+
+        {/* ChittorTech Software Sidebar Badge & Direct Link */}
+        <div className="px-2 pb-1">
+          <a
+            href="https://chittortech.in"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group flex items-center justify-between p-2 rounded-xl bg-gradient-to-r from-sky-950/70 to-slate-900/90 hover:from-sky-900/60 hover:to-slate-850 border border-sky-700/40 hover:border-sky-500/60 transition-all text-white shadow-sm"
+            title="Visit ChittorTech Software Official Portal (chittortech.in)"
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="p-1 rounded-md bg-sky-500/20 text-amber-400 group-hover:rotate-12 transition-transform shrink-0">
+                <Sparkles className="w-3.5 h-3.5" />
+              </div>
+              <div className="truncate">
+                <p className="text-[10px] font-bold text-sky-200 leading-tight truncate">ChittorTech Software</p>
+                <p className="text-[9px] text-slate-400 font-mono truncate">chittortech.in &bull; Official</p>
+              </div>
+            </div>
+            <ArrowUpRight className="w-3.5 h-3.5 text-sky-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform shrink-0" />
+          </a>
         </div>
 
         {/* User Profile Pill at Bottom */}
@@ -830,6 +828,8 @@ export const DashboardView = ({
                 ? 'Intake Queue'
                 : activeTab === 'SLA'
                 ? 'SLA & Overdue'
+                : activeTab === 'SUPPORT'
+                ? 'Help & Developer Support'
                 : activeTab.toLowerCase()}
             </h2>
             <span className="text-xs text-slate-400 font-normal">
@@ -859,8 +859,8 @@ export const DashboardView = ({
                 setStatusModalConfig({
                   isOpen: true,
                   type: 'success',
-                  title: 'Database Synchronized!',
-                  subtitle: 'Latest records from Chittorgarh Central Database have been successfully refreshed and synchronized.',
+                  title: 'Synchronized!',
+                  subtitle: 'Central database records have been refreshed and updated.',
                   confirmText: 'OK'
                 });
               }}
@@ -975,16 +975,18 @@ export const DashboardView = ({
 
         {/* Dashboard Body */}
         <main className="p-6 space-y-6">
-          {/* Greeting & Subtitle (Matches Reference Screenshot 2) */}
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-                Good morning, {userRole.replace('_', ' ')} 👋
-              </h1>
-              <p className="text-xs text-slate-500 mt-1">
-                Here's what's happening across Nagar Parishad Chittorgarh today.
-              </p>
-            </div>
+          {(activeTab === 'DASHBOARD' || activeTab === 'TICKETS' || activeTab === 'CLOSED' || activeTab === 'SLA') && (
+            <>
+              {/* Greeting & Subtitle (Matches Reference Screenshot 2) */}
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+                    Good morning, {userRole.replace('_', ' ')} 👋
+                  </h1>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Here's what's happening across Nagar Parishad Chittorgarh today.
+                  </p>
+                </div>
 
             <div className="flex items-center gap-2">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold">
@@ -1211,6 +1213,8 @@ export const DashboardView = ({
               </div>
             </button>
           </div>
+        </>
+      )}
 
           {/* ACTIVE TAB CONTENT DISPLAY */}
 
@@ -2017,140 +2021,151 @@ export const DashboardView = ({
           </div>
           )}
 
-          {/* TAB: WHATSAPP AUDIT LOGS */}
-          {activeTab === 'WHATSAPP' && (
-            <div className="space-y-4">
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
-              <div className="px-6 py-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-4">
-                <div>
-                  <h3 className="text-sm font-bold text-slate-900">
-                    WhatsApp Automation &amp; Notification Audit Logs (Workflow H)
-                  </h3>
-                  <p className="text-xs text-slate-500">
-                    Official Hindi closure messages, councillor alerts, and officer dispatches
-                  </p>
-                </div>
-                <span className="hidden sm:inline-block text-[11px] text-slate-400">
-                  Scroll horizontally ↔
-                </span>
-              </div>
-
-              <div className="overflow-x-auto border-t-2 border-slate-400">
-                <table className="w-full min-w-[1050px] border-collapse border border-slate-400 text-left text-xs text-slate-800">
-                  <thead className="bg-slate-100 border-b-2 border-slate-500 font-bold uppercase tracking-wider text-[11px] text-slate-800 select-none">
-                    <tr>
-                      <th className="px-4 py-3.5 border-r border-slate-400 w-[140px] min-w-[140px] whitespace-nowrap">Ticket #</th>
-                      <th className="px-4 py-3.5 border-r border-slate-400 w-[200px] min-w-[200px] whitespace-nowrap">Recipient &amp; Phone</th>
-                      <th className="px-4 py-3.5 border-r border-slate-400 w-[170px] min-w-[170px] whitespace-nowrap">Template</th>
-                      <th className="px-4 py-3.5 border-r border-slate-400 min-w-[320px]">Message Content</th>
-                      <th className="px-4 py-3.5 border-r border-slate-400 w-[130px] min-w-[130px] text-center whitespace-nowrap">Status</th>
-                      <th className="px-4 py-3.5 border-r border-slate-400 w-[120px] min-w-[120px] whitespace-nowrap">Sent Time</th>
-                      <th className="px-4 py-3.5 w-[110px] min-w-[110px] text-right whitespace-nowrap">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-400 bg-white">
-                    {notifications.length === 0 ? (
-                      <tr>
-                        <td colSpan={7} className="px-6 py-12 text-center text-slate-400">
-                          No WhatsApp notification logs recorded yet.
-                        </td>
-                      </tr>
-                    ) : (
-                      notifications.map((notif) => (
-                        <tr key={notif.id} className="hover:bg-blue-50/70 even:bg-slate-50/50 transition-colors">
-                          <td className="px-4 py-3.5 border-r border-slate-400 align-middle font-mono font-bold text-slate-900 whitespace-nowrap">
-                            {notif.ticket_number}
-                          </td>
-                          <td className="px-4 py-3.5 border-r border-slate-400 align-middle whitespace-nowrap">
-                            <p className="font-semibold text-slate-900 text-xs whitespace-nowrap">{notif.recipient_name}</p>
-                            <p className="font-mono text-slate-500 text-xs mt-0.5 whitespace-nowrap">{notif.recipient_phone}</p>
-                          </td>
-                          <td className="px-4 py-3.5 border-r border-slate-400 align-middle font-mono text-[11px] text-slate-600 whitespace-nowrap">
-                            {notif.template_name}
-                          </td>
-                          <td className="px-4 py-3.5 border-r border-slate-400 align-middle">
-                            <p className="line-clamp-2 text-xs text-slate-700 leading-relaxed font-sans" title={notif.message_content}>
-                              {notif.message_content}
-                            </p>
-                          </td>
-                          <td className="px-4 py-3.5 border-r border-slate-400 align-middle text-center whitespace-nowrap">
-                            <span className="inline-block px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-300 font-bold text-[10px] whitespace-nowrap">
-                              {notif.status}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3.5 border-r border-slate-400 align-middle text-slate-500 text-xs whitespace-nowrap font-mono">
-                            {notif.sent_at}
-                          </td>
-                          <td className="px-4 py-3.5 align-middle text-right whitespace-nowrap">
-                            <a
-                              href={`https://wa.me/${cleanPhoneForWhatsApp(notif.recipient_phone)}?text=${encodeURIComponent(notif.message_content)}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] inline-flex items-center gap-1 shadow-2xs transition-transform active:scale-95"
-                            >
-                              <MessageSquare className="w-3 h-3" />
-                              <span>Open Chat</span>
-                            </a>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* Workflow Flowchart & Guide (Placed at bottom, collapsed by default) */}
-            <TabGuideBanner tabKey="WHATSAPP" />
-          </div>
-          )}
-
           {/* TAB: SETTINGS & WORKING HOURS */}
           {activeTab === 'SETTINGS' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-6">
+              {/* Row 1: Official Municipal Working Hours */}
               <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
-                <h3 className="font-bold text-slate-900 text-sm">Official Municipal Working Hours (Workflow A &amp; B)</h3>
-                <div className="space-y-3 text-xs">
-                  <div className="flex justify-between p-3 bg-slate-50 rounded-xl">
-                    <span className="font-medium text-slate-700">Helpline Intake Hours:</span>
-                    <span className="font-bold text-slate-900">10:00 AM – 6:00 PM IST</span>
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <div className="flex items-center gap-2">
+                    <ClockAlert className="w-4 h-4 text-blue-600" />
+                    <h3 className="font-bold text-slate-900 text-sm">
+                      Official Municipal Working Hours &amp; Intake Rules (Workflow A &amp; B)
+                    </h3>
                   </div>
-                  <div className="flex justify-between p-3 bg-slate-50 rounded-xl">
-                    <span className="font-medium text-slate-700">WhatsApp Intake Reception:</span>
-                    <span className="font-bold text-emerald-700">24/7 Automated Ingestion</span>
+                  <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 font-mono">
+                    MUNICIPAL POLICY
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                  <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
+                    <span className="font-medium text-slate-500 block">Helpline Intake Hours:</span>
+                    <span className="font-bold text-slate-900 text-sm">10:00 AM – 6:00 PM IST</span>
+                    <p className="text-[11px] text-slate-500 pt-0.5">कार्यालयीन कार्य दिवस: सोमवार से शनिवार</p>
                   </div>
-                  <div className="flex justify-between p-3 bg-slate-50 rounded-xl">
-                    <span className="font-medium text-slate-700">After-Hours Queue Release:</span>
-                    <span className="font-bold text-slate-900">Next Working Day at 10:00 AM</span>
+
+                  <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
+                    <span className="font-medium text-slate-500 block">WhatsApp &amp; Helpline Reception:</span>
+                    <span className="font-bold text-emerald-700 text-sm flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                      Manual Operator Verification
+                    </span>
+                    <p className="text-[11px] text-slate-500 pt-0.5">हेल्पलाइन ऑपरेटर द्वारा नागरिक शिकायतों का मैन्युअल सत्यापन व प्रविष्टि</p>
+                  </div>
+
+                  <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
+                    <span className="font-medium text-slate-500 block">After-Hours Queue Processing:</span>
+                    <span className="font-bold text-slate-900 text-sm">Next Working Day at 10:00 AM</span>
+                    <p className="text-[11px] text-slate-500 pt-0.5">समय समाप्ति पश्चात प्राप्त शिकायतों का आगामी कार्यदिवस निस्तारण</p>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
-                <h3 className="font-bold text-slate-900 text-sm">Configured Municipal SLA Deadlines (Workflow G)</h3>
-                <div className="space-y-2 text-xs">
-                  <div className="flex justify-between p-3 bg-slate-50 rounded-xl">
-                    <span className="font-medium text-slate-700">Emergency &amp; Carcass Disposal:</span>
-                    <span className="font-bold text-rose-600">12 Hours SLA</span>
+              {/* Row 2: Configured Department SLA Deadlines & Concerned Officers (Dynamic from departments) */}
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
+                <div className="p-5 border-b border-slate-200 flex flex-wrap items-center justify-between gap-4 bg-slate-50/70">
+                  <div>
+                    <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                      <Building2 className="w-4 h-4 text-blue-600" />
+                      <span>Configured Department SLA Deadlines &amp; Concerned Officers</span>
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      सभी विभागों के लिए मानक समय सीमा (SLA) एवं जिम्मेदार नोडल अधिकारी सेट करें — शिकायत इंटेक व निस्तारण में यही डेटा लागू होता है।
+                    </p>
                   </div>
-                  <div className="flex justify-between p-3 bg-slate-50 rounded-xl">
-                    <span className="font-medium text-slate-700">Sanitation &amp; Garbage Collection:</span>
-                    <span className="font-bold text-amber-600">24 Hours SLA</span>
-                  </div>
-                  <div className="flex justify-between p-3 bg-slate-50 rounded-xl">
-                    <span className="font-medium text-slate-700">Streetlights &amp; Drains:</span>
-                    <span className="font-bold text-blue-600">48 Hours SLA</span>
-                  </div>
-                  <div className="flex justify-between p-3 bg-slate-50 rounded-xl">
-                    <span className="font-medium text-slate-700">Road Repairs &amp; Civil Works:</span>
-                    <span className="font-bold text-slate-800">72 Hours SLA</span>
-                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingDepartment(null);
+                      setIsDepartmentModalOpen(true);
+                    }}
+                    className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs inline-flex items-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>+ Add New Department</span>
+                  </button>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse text-left text-xs text-slate-800">
+                    <thead className="bg-slate-100 border-b border-slate-200 font-bold uppercase tracking-wider text-[11px] text-slate-700 select-none">
+                      <tr>
+                        <th className="px-4 py-3.5 border-r border-slate-200 w-24">Code</th>
+                        <th className="px-4 py-3.5 border-r border-slate-200">Department Name</th>
+                        <th className="px-4 py-3.5 border-r border-slate-200 w-48">Configured SLA Deadline</th>
+                        <th className="px-4 py-3.5 border-r border-slate-200 w-56">Concerned Officer (जिम्मेदार अधिकारी)</th>
+                        <th className="px-4 py-3.5 border-r border-slate-200 w-44">Officer Phone</th>
+                        <th className="px-4 py-3.5 text-right w-40">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200 bg-white">
+                      {departments.map((dept) => (
+                        <tr key={dept.id} className="hover:bg-blue-50/60 transition-colors">
+                          <td className="px-4 py-3.5 border-r border-slate-200 font-mono font-bold text-blue-600">
+                            {dept.code}
+                          </td>
+                          <td className="px-4 py-3.5 border-r border-slate-200 font-semibold text-slate-900">
+                            {dept.name}
+                          </td>
+                          <td className="px-4 py-3.5 border-r border-slate-200">
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 text-blue-800 border border-blue-200 font-bold text-xs">
+                              <ClockAlert className="w-3.5 h-3.5 text-blue-600" />
+                              <span>{dept.default_sla_hours} Hours</span>
+                              <span className="text-[10px] text-blue-600 font-normal">
+                                {dept.default_sla_hours >= 720 ? '(1 Month)' : dept.default_sla_hours >= 168 ? '(1 Week)' : dept.default_sla_hours >= 24 ? `(${Math.round(dept.default_sla_hours / 24)}d)` : ''}
+                              </span>
+                            </span>
+                          </td>
+                          <td className="px-4 py-3.5 border-r border-slate-200 font-medium text-slate-800">
+                            <div className="flex items-center gap-2">
+                              <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-slate-700 text-[10px] font-bold">
+                                {dept.head_officer_name.charAt(0)}
+                              </div>
+                              <span className="truncate">{dept.head_officer_name}</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3.5 border-r border-slate-200 font-mono">
+                            <a href={`tel:${dept.head_officer_phone}`} className="inline-flex items-center gap-1.5 text-blue-600 hover:underline">
+                              <Phone className="w-3 h-3 text-emerald-600" />
+                              <span>{dept.head_officer_phone}</span>
+                            </a>
+                          </td>
+                          <td className="px-4 py-3.5 text-right whitespace-nowrap">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingDepartment(dept);
+                                setIsDepartmentModalOpen(true);
+                              }}
+                              className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-blue-600 hover:text-white text-slate-700 border border-slate-200 text-xs font-semibold inline-flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer shadow-2xs"
+                              title={`Edit SLA and Officer for ${dept.name}`}
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                              <span>Edit SLA &amp; Officer</span>
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             </div>
+          )}
+
+          {/* TAB: HELP & DEVELOPER SUPPORT */}
+          {activeTab === 'SUPPORT' && (
+            <HelpSupportView />
           )}
 
         </main>
+
+        {/* Global Municipal Admin Footer (Civic Leadership & ChittorTech Credits) */}
+        <div className="px-6 pb-6">
+          <AdminFooter />
+        </div>
       </div>
 
       {/* 3. MODALS */}
@@ -2205,13 +2220,12 @@ export const DashboardView = ({
               setStatusModalConfig({
                 isOpen: true,
                 type: 'success',
-                title: 'Complaint Accepted & Sent to Intake Queue!',
-                subtitle: `Complaint from ${data.citizen_name} has been accepted and is now in the Intake Queue. Click 'Verify & Accept' in the table to review details, assign ward/officer/SLA, and officially issue the ticket.`,
+                title: 'Accepted!',
+                subtitle: `Complaint from ${data.citizen_name} has been accepted into the Intake Queue.`,
                 details: [
                   `Citizen: ${data.citizen_name} (${data.citizen_phone})`,
                   `Channel: ${data.intake_channel === 'WHATSAPP' ? 'WhatsApp 24/7' : 'Helpline Call (10 AM - 6 PM)'}`,
-                  `Ward & Locality: Ward ${data.ward_number} - ${data.address}`,
-                  `Queue Status: PENDING_REVIEW (Workflow A & B)`
+                  `Ward & Locality: Ward ${data.ward_number} - ${data.address}`
                 ],
                 confirmText: 'OK'
               });
@@ -2264,15 +2278,14 @@ export const DashboardView = ({
               setStatusModalConfig({
                 isOpen: true,
                 type: 'warning',
-                title: 'Complaint Rejected & Saved to Audit!',
-                subtitle: `Complaint from ${data.citizen_name} has been rejected. It is permanently saved in the Rejected audit trail. ${data.notify_citizen ? 'Automated WhatsApp rejection notice was dispatched to citizen.' : 'Citizen notification was skipped (Silent rejection).' }`,
+                title: 'Rejected!',
+                subtitle: `Complaint from ${data.citizen_name} has been rejected and recorded in the municipal audit trail.`,
                 details: [
                   `Citizen: ${data.citizen_name} (${data.citizen_phone})`,
                   `Rejection Reason: ${data.rejection_reason || 'Rejected by Portal Manager'}`,
-                  `Citizen WhatsApp Notice: ${data.notify_citizen ? 'Dispatched' : 'Skipped / Not Sent (Silent)'}`,
-                  `Queue Status: REJECTED (Workflow A & B Audit Log)`
+                  `Citizen WhatsApp Notice: ${data.notify_citizen ? 'Dispatched' : 'Skipped / Not Sent (Silent)'}`
                 ],
-                confirmText: 'View Rejected Records'
+                confirmText: 'OK'
               });
               return;
             }

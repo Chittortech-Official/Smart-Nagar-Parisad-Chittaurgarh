@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import type { Department } from '../types';
-import { X, Save, Building2, UserCheck, Phone, Clock, PlusCircle } from 'lucide-react';
+import { X, Save, Building2, UserCheck, Phone, Clock, PlusCircle, Loader2 } from 'lucide-react';
 
 interface DepartmentModalProps {
   isOpen: boolean;
   onClose: () => void;
   department: Department | null; // null = Add mode, present = Edit mode
-  onSave: (dept: Department) => void;
+  onSave: (dept: Department) => Promise<void> | void;
 }
 
 export const DepartmentModal = ({
@@ -24,13 +24,14 @@ export const DepartmentModal = ({
     head_officer_name: '',
     head_officer_phone: ''
   });
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (department) {
       setFormData({ ...department });
     } else {
       setFormData({
-        id: `dept-${Date.now()}`,
+        id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `dept-${Date.now()}`,
         name: '',
         code: '',
         default_sla_hours: 24,
@@ -38,11 +39,12 @@ export const DepartmentModal = ({
         head_officer_phone: ''
       });
     }
+    setIsSaving(false);
   }, [department, isOpen]);
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name.trim()) {
       alert('कृपया विभाग का नाम दर्ज करें (Please enter Department Name)');
@@ -61,18 +63,25 @@ export const DepartmentModal = ({
       return;
     }
 
-    onSave({
-      ...formData,
-      code: formData.code.toUpperCase().trim(),
-      default_sla_hours: Number(formData.default_sla_hours) || 24
-    });
-    onClose();
+    setIsSaving(true);
+    try {
+      await onSave({
+        ...formData,
+        code: formData.code.toUpperCase().trim(),
+        default_sla_hours: Number(formData.default_sla_hours) || 24
+      });
+      setIsSaving(false);
+      onClose();
+    } catch (err: any) {
+      setIsSaving(false);
+      alert(err?.message || 'डेटाबेस में सहेजने में विफल। कृपया पुनः प्रयास करें।');
+    }
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
       <div 
-        className="w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden text-slate-800 animate-in zoom-in-95 duration-200"
+        className="w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden text-slate-800 animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
@@ -92,8 +101,9 @@ export const DepartmentModal = ({
           </div>
           <button
             type="button"
+            disabled={isSaving}
             onClick={onClose}
-            className="p-1 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+            className="p-1 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -118,24 +128,60 @@ export const DepartmentModal = ({
               />
             </div>
 
-            {/* Standard SLA Hours */}
-            <div className="space-y-1">
-              <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1">
+          {/* Standard SLA Hours */}
+          <div className="space-y-1.5 sm:col-span-2">
+            <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 flex items-center justify-between">
+              <span className="flex items-center gap-1">
                 <Clock className="w-3 h-3 text-slate-400" />
-                <span>मानक SLA (Hours)</span>
-              </label>
+                <span>मानक SLA समय सीमा (Configured SLA Duration)</span>
+              </span>
+              <span className="text-blue-600 font-mono font-bold text-xs">
+                {formData.default_sla_hours} घंटे {formData.default_sla_hours >= 720 ? '(1 Month / 30 Days)' : formData.default_sla_hours >= 168 ? '(1 Week / 7 Days)' : formData.default_sla_hours >= 24 ? `(${Math.round(formData.default_sla_hours / 24)} Days)` : `(${formData.default_sla_hours} Hours)`}
+              </span>
+            </label>
+
+            {/* Quick Fitted Preset Buttons */}
+            <div className="flex flex-wrap gap-1.5">
+              {[
+                { label: '12 Hours (Emergency)', hours: 12 },
+                { label: '24 Hours (1 Day)', hours: 24 },
+                { label: '48 Hours (2 Days)', hours: 48 },
+                { label: '72 Hours (3 Days)', hours: 72 },
+                { label: '1 Week (168h)', hours: 168 },
+                { label: '1 Month (720h)', hours: 720 },
+              ].map((preset) => (
+                <button
+                  key={preset.hours}
+                  type="button"
+                  onClick={() => setFormData({ ...formData, default_sla_hours: preset.hours })}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-all cursor-pointer ${
+                    formData.default_sla_hours === preset.hours
+                      ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
+                      : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
+                  }`}
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Custom Hours Input */}
+            <div className="flex items-center gap-2 pt-1">
+              <span className="text-[11px] text-slate-500 whitespace-nowrap">या कस्टम घंटे सेट करें:</span>
               <input
                 type="number"
                 min={1}
-                max={360}
+                max={2000}
                 value={formData.default_sla_hours}
                 onChange={(e) => setFormData({ ...formData, default_sla_hours: Number(e.target.value) })}
                 required
-                className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-mono font-bold text-slate-800 bg-white focus:ring-2 focus:ring-blue-600 focus:outline-none"
+                className="w-28 px-3 py-1.5 rounded-lg border border-slate-300 text-xs font-mono font-bold text-slate-800 bg-white focus:ring-2 focus:ring-blue-600 focus:outline-none"
                 placeholder="24"
               />
+              <span className="text-xs text-slate-500 font-medium">घंटे (Hours)</span>
             </div>
           </div>
+        </div>
 
           {/* Department Name */}
           <div className="space-y-1">
@@ -183,15 +229,13 @@ export const DepartmentModal = ({
               className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs text-slate-800 bg-white font-mono font-medium focus:ring-2 focus:ring-blue-600 focus:outline-none"
               placeholder="+919414000001"
             />
-            <p className="text-[10px] text-slate-400">
-              * शिकायत दर्ज होते ही संबंधित अधिकारी को इसी नंबर पर व्हाट्सएप कार्य-आदेश जाएगा।
-            </p>
           </div>
 
           {/* Actions */}
           <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-3">
             <button
               type="button"
+              disabled={isSaving}
               onClick={onClose}
               className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer"
             >
@@ -199,10 +243,20 @@ export const DepartmentModal = ({
             </button>
             <button
               type="submit"
-              className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 shadow-md transition-all cursor-pointer"
+              disabled={isSaving}
+              className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs font-bold flex items-center gap-2 shadow-md transition-all cursor-pointer disabled:opacity-50"
             >
-              <Save className="w-4 h-4" />
-              <span>{isEdit ? 'सहेजें (Save Changes)' : 'विभाग जोड़ें (Add Department)'}</span>
+              {isSaving ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>सहेजा जा रहा है...</span>
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4" />
+                  <span>{isEdit ? 'सहेजें (Save Changes)' : 'विभाग जोड़ें (Add Department)'}</span>
+                </>
+              )}
             </button>
           </div>
         </form>

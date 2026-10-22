@@ -17,10 +17,12 @@ export function App() {
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return [...parsed].sort((a, b) => a.ward_number - b.ward_number);
+        }
       } catch (e) {}
     }
-    return INITIAL_WARDS;
+    return [...INITIAL_WARDS].sort((a, b) => a.ward_number - b.ward_number);
   });
 
   const [departments, setDepartments] = useState<Department[]>(() => {
@@ -116,9 +118,12 @@ export function App() {
     const activeClient = supabase;
     const fetchLiveDbData = async () => {
       try {
-        const { data: wardsData } = await activeClient.from('wards').select('*');
+        const { data: wardsData } = await activeClient
+          .from('wards')
+          .select('*')
+          .order('ward_number', { ascending: true });
         if (wardsData && wardsData.length > 0) {
-          setWards(wardsData);
+          setWards([...wardsData].sort((a, b) => a.ward_number - b.ward_number));
         }
 
         const { data: deptsData } = await activeClient.from('departments').select('*');
@@ -267,16 +272,86 @@ export function App() {
     setNotifications(prev => [newNotif, ...prev]);
   };
 
-  const handleUpdateWard = (updatedWard: Ward) => {
-    setWards(prev => prev.map(w => w.ward_number === updatedWard.ward_number ? updatedWard : w));
+  const handleUpdateWard = async (updatedWard: Ward) => {
+    // 1. Update local state & localStorage immediately, maintaining strict 1 to 60 sort
+    setWards(prev => {
+      const updated = prev.map(w => w.ward_number === updatedWard.ward_number ? updatedWard : w);
+      return [...updated].sort((a, b) => a.ward_number - b.ward_number);
+    });
+
+    // 2. Sync to Supabase Central Database
+    if (supabase) {
+      try {
+        const { error } = await supabase.from('wards').update({
+          ward_name: updatedWard.ward_name,
+          councillor_name: updatedWard.councillor_name,
+          councillor_phone: updatedWard.councillor_phone,
+          zone: updatedWard.zone,
+          key_landmarks: updatedWard.key_landmarks
+        }).eq('ward_number', updatedWard.ward_number);
+
+        if (error) {
+          console.error("Supabase ward update error:", error);
+          throw error;
+        }
+      } catch (err) {
+        console.warn("Supabase ward update:", err);
+        throw err;
+      }
+    }
   };
 
-  const handleUpdateDepartment = (updatedDept: Department) => {
+  const handleUpdateDepartment = async (updatedDept: Department) => {
+    // 1. Update local state & localStorage immediately
     setDepartments(prev => prev.map(d => d.id === updatedDept.id ? updatedDept : d));
+
+    // 2. Sync to Supabase Central Database
+    if (supabase) {
+      try {
+        const { error } = await supabase.from('departments').update({
+          name: updatedDept.name,
+          code: updatedDept.code,
+          default_sla_hours: updatedDept.default_sla_hours,
+          head_officer_name: updatedDept.head_officer_name,
+          head_officer_phone: updatedDept.head_officer_phone
+        }).eq('id', updatedDept.id);
+
+        if (error) {
+          console.error("Supabase department update error:", error);
+          throw error;
+        }
+      } catch (err) {
+        console.warn("Supabase department update:", err);
+        throw err;
+      }
+    }
   };
 
-  const handleAddDepartment = (newDept: Department) => {
+  const handleAddDepartment = async (newDept: Department) => {
+    // 1. Update local state & localStorage immediately
     setDepartments(prev => [...prev, newDept]);
+
+    // 2. Sync to Supabase Central Database
+    if (supabase) {
+      try {
+        const { error } = await supabase.from('departments').insert([{
+          id: newDept.id,
+          name: newDept.name,
+          code: newDept.code,
+          default_sla_hours: newDept.default_sla_hours,
+          head_officer_name: newDept.head_officer_name,
+          head_officer_phone: newDept.head_officer_phone
+        }]);
+
+        if (error) {
+          console.error("Supabase department insert error:", error);
+          throw error;
+        }
+      } catch (err) {
+        console.warn("Supabase department insert:", err);
+        throw err;
+      }
+    }
   };
 
   return (
